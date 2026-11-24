@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 
-# Find the main CyberShieldAid project folder
+# Find the main CyberFirstAid project folder
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -15,11 +15,14 @@ from database import Base, engine, SessionLocal
 from models import Incident
 import models
 
-# Import Member 3's AI function
+# Import Core Intelligence functions
 from ai_module.src import assess_incident
+from ai_module.src.incident_questions import get_incident_questions
+
 
 # Create the FastAPI application
 app = FastAPI(title="CyberFirstAid Backend")
+
 
 # Allow the frontend to communicate with the backend
 app.add_middleware(
@@ -33,13 +36,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# Create database tables if they do not exist
 Base.metadata.create_all(bind=engine)
 
 
-# Define the information we expect from the user
-
+# Information expected from the user
 class IncidentRequest(BaseModel):
     description: str = Field(..., min_length=5, max_length=5000)
+    answers: dict[str, str] | None = None
 
     @field_validator("description")
     @classmethod
@@ -80,13 +85,30 @@ class IncidentUpdate(BaseModel):
         return value
 
 
-
-
-
 # Home API
 @app.get("/")
 def home():
-    return {"message": "Welcome to CyberFirstAid Backend!"}
+    return {
+        "message": "Welcome to CyberFirstAid Backend!"
+    }
+
+
+# Get incident-specific follow-up questions
+@app.get("/api/assessment/questions/{category}")
+def get_assessment_questions(category: str):
+
+    questions = get_incident_questions(category)
+
+    if not questions:
+        raise HTTPException(
+            status_code=404,
+            detail="No questions found for this incident category."
+        )
+
+    return {
+        "category": category,
+        "questions": questions
+    }
 
 
 # Analyse an incident and save it
@@ -96,8 +118,13 @@ def analyse_incident(request: IncidentRequest):
     db = SessionLocal()
 
     try:
-        result = assess_incident(request.description)
+        # Classify the incident and calculate risk using answers
+        result = assess_incident(
+            request.description,
+            request.answers
+        )
 
+        # Save the incident in the database
         new_incident = Incident(
             description=request.description,
             incident_category=result["incident_category"],
@@ -119,6 +146,7 @@ def analyse_incident(request: IncidentRequest):
 
     except Exception:
         db.rollback()
+
         raise HTTPException(
             status_code=500,
             detail="Incident assessment could not be completed."
@@ -126,6 +154,7 @@ def analyse_incident(request: IncidentRequest):
 
     finally:
         db.close()
+
 
 # Update an existing incident
 @app.put("/api/incidents/{incident_id}")
@@ -160,9 +189,6 @@ def update_incident(
 
     finally:
         db.close()
-
-
-# Get all previously saved incidents
 
 
 # Get all previously saved incidents
@@ -257,11 +283,12 @@ def delete_incident(incident_id: int):
 
     finally:
         db.close()
-        
+
 
 # Mark an incident as resolved
 @app.put("/api/incidents/{incident_id}/resolve")
 def resolve_incident(incident_id: int):
+
     db = SessionLocal()
 
     try:
@@ -276,6 +303,7 @@ def resolve_incident(incident_id: int):
             )
 
         incident.status = "resolved"
+
         db.commit()
         db.refresh(incident)
 
@@ -287,4 +315,3 @@ def resolve_incident(incident_id: int):
 
     finally:
         db.close()
-

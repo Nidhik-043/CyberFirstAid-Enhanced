@@ -230,7 +230,7 @@ export default function RecoveryPage() {
 
         <p className="mt-8 text-center text-sm text-slate-500">
           Prototype checklist: progress is stored only in
-          this page's current session and will reset on reload.
+          this page&apos;s current session and will reset on reload.
           Completing this checklist does not guarantee that
           an incident has been fully resolved.
         </p>

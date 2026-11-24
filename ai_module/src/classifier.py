@@ -1,8 +1,8 @@
-﻿import re
+﻿
+import re
 
 # CyberFirstAid incident categories and their matching keywords.
 CATEGORY_KEYWORDS = {
-
     "financial_fraud": [
         "financial fraud", "online financial fraud", "bank fraud",
         "payment fraud", "upi fraud", "upi scam", "banking scam",
@@ -13,7 +13,9 @@ CATEGORY_KEYWORDS = {
         "money deducted without permission",
         "money stolen", "stole my money", "money disappeared",
         "money missing from account", "unexpected bank deduction",
-        "unknown bank transaction", "unknown transaction", "unrecognized transaction", "unrecognised transaction", "unknown transaction in my bank account", "unknown upi transaction",
+        "unknown bank transaction", "unknown transaction",
+        "unrecognized transaction", "unrecognised transaction",
+        "unknown transaction in my bank account", "unknown upi transaction",
         "fraudulent transaction", "fraudulent payment",
         "unauthorized bank transfer", "unauthorised bank transfer",
         "payment made without my knowledge",
@@ -31,10 +33,8 @@ CATEGORY_KEYWORDS = {
         "shared my upi pin", "entered my card details",
         "money deducted from my account",
         "money transferred from my account",
-        "stole money",
-        "shared an otp",
-        "bank account fraud",
-        "money taken from bank account",
+        "stole money", "shared an otp",
+        "bank account fraud", "money taken from bank account",
     ],
 
     "phishing": [
@@ -79,7 +79,9 @@ CATEGORY_KEYWORDS = {
         "unauthorised access to instagram",
         "unauthorised access to facebook",
         "logged out of my account",
-        "cannot access my instagram", "unable to access my instagram account", "unable to access instagram account",
+        "cannot access my instagram",
+        "unable to access my instagram account",
+        "unable to access instagram account",
         "cannot access my facebook",
         "cannot access my social account",
         "password changed without permission",
@@ -105,6 +107,25 @@ CATEGORY_KEYWORDS = {
         "took over my whatsapp account",
         "whatsapp account taken over",
         "someone hacked my whatsapp account",
+
+        # Additional variations for social media account hacking.
+        "gained unauthorised access to my instagram account",
+        "gained unauthorized access to my instagram account",
+        "gained unauthorised access to my facebook account",
+        "gained unauthorized access to my facebook account",
+        "password was changed without my permission",
+        "my password was changed without my permission",
+        "can no longer log in",
+        "can no longer login",
+        "no longer able to log in",
+        "unknown messages are being sent",
+        "messages are being sent to my friends from my account",
+        "unknown messages are being sent to my friends",
+        "someone may misuse my account",
+        "my account may be misused",
+        "someone gained access to my account",
+        "unauthorised access to my social media account",
+        "unauthorized access to my social media account",
     ],
 
     "email_compromise": [
@@ -190,7 +211,9 @@ CATEGORY_KEYWORDS = {
         "sextortion", "online intimidation",
         "repeated unwanted messages",
         "repeated threatening messages",
-        "someone is threatening me", "threatening to share my private photos", "someone is threatening to share my private photos",
+        "someone is threatening me",
+        "threatening to share my private photos",
+        "someone is threatening to share my private photos",
         "someone is blackmailing me",
         "someone is stalking me online",
         "someone is harassing me online",
@@ -240,8 +263,8 @@ CATEGORY_KEYWORDS = {
 }
 
 
-
 # Additional patterns to cover different descriptions of the seven incidents.
+
 CATEGORY_KEYWORDS["financial_fraud"].extend([
     "caller pretending to be from my bank",
     "convinced me to share an otp",
@@ -333,6 +356,7 @@ CATEGORY_KEYWORDS["lost_stolen_devices"].extend([
     "my tablet was stolen",
 ])
 
+
 def classify_incident(description: str) -> dict:
     """
     Identify the most likely cyber incident category
@@ -386,5 +410,53 @@ def classify_incident(description: str) -> dict:
         "needs_review": len(tied_categories) > 1,
         "score": best_score
     }
+CATEGORY_KEYWORDS["identity_theft"].extend([
+    "received a notification about a loan",
+    "loan that i never applied for",
+    "loan i never applied for",
+    "used my aadhaar and pan details",
+    "used my aadhaar details without my permission",
+    "used my pan details without my permission",
+    "created a financial account using my identity",
+    "financial account created using my details",
+    "someone used my identity information",
+    "identity information has been misused",
+])
 
+CATEGORY_KEYWORDS["lost_stolen_devices"].extend([
+    "lost my smartphone",
+    "i lost my smartphone",
+    "lost my smartphone while travelling",
+    "lost my smartphone while traveling",
+    "phone had no screen lock",
+    "banking and payment applications were logged in",
+    "sim card is still active",
+    "personal documents and private information",
+])
+CATEGORY_KEYWORDS["financial_fraud"].extend([
+    "transferred money from my bank account without my permission",
+    "someone transferred money from my bank account",
+    "money from my bank account without my permission",
+    "shared my banking otp",
+    "shared my banking otp with the caller",
+    "banking otp with the caller",
+])
+
+CATEGORY_KEYWORDS["phishing"].extend([
+    "received an email asking me to click a link",
+    "email asking me to click a link",
+    "enter my bank login details",
+    "website looked fake",
+    "collected my password",
+    "fake website collected my password",
+    "bank login details",
+])
+
+
+CATEGORY_KEYWORDS["email_compromise"].extend([
+    "someone accessed my gmail account",
+    "accessed my gmail account without permission",
+    "changed my password without permission",
+    "sending emails from my account",
+])
 

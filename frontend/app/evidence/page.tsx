@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -200,7 +200,7 @@ export default function EvidencePage() {
         </div>
 
         <div className="mb-8 rounded-2xl border-2 border-dashed border-cyan-800 bg-slate-900 p-10 text-center">
-          <div className="mb-4 text-5xl">📁</div>
+          <div className="mb-4 text-5xl">??</div>
           <h2 className="mb-3 text-2xl font-bold">Select Evidence Files</h2>
           <p className="mb-6 text-slate-400">
             Supported: PNG, JPG, JPEG, PDF, TXT
@@ -227,7 +227,7 @@ export default function EvidencePage() {
         </div>
 
         <div className="mb-8 rounded-xl border border-amber-800 bg-amber-950/30 p-5 text-sm text-amber-200">
-          Selected evidence files are uploaded to the application's server
+          Selected evidence files are uploaded to the application&apos;s server
           and stored in its private evidence directory. Do not upload
           sensitive files unless you are authorized to do so. This prototype
           does not yet implement user authentication or access control.
