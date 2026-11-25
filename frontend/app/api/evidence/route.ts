@@ -1,6 +1,6 @@
 ﻿import { NextResponse } from "next/server";
 import { createHash, randomUUID } from "crypto";
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, readFile, readdir, writeFile } from "fs/promises";
 import path from "path";
 import { recordAuditEvent } from "../../../lib/audit";
 
@@ -8,6 +8,35 @@ export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get("file");
+    const incidentId = formData.get("incidentId");
+
+    if (incidentId !== null && incidentId !== "") {
+      if (
+        typeof incidentId !== "string" ||
+        !/^CFA-[A-F0-9]{8}$/.test(incidentId)
+      ) {
+        return NextResponse.json(
+          { error: "Invalid incident ID" },
+          { status: 400 }
+        );
+      }
+
+      const incidentPath = path.join(
+        process.cwd(),
+        "private_incidents",
+        "incidents",
+        `${incidentId}.json`
+      );
+
+      try {
+        await readFile(incidentPath, "utf8");
+      } catch {
+        return NextResponse.json(
+          { error: "Selected incident was not found" },
+          { status: 404 }
+        );
+      }
+    }
 
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -59,6 +88,7 @@ export async function POST(request: Request) {
       sha256,
       uploadedAt: new Date().toISOString(),
       status: "UPLOADED",
+      incidentId: incidentId || null,
     };
 
     await writeFile(
@@ -83,3 +113,50 @@ export async function POST(request: Request) {
     );
   }
 }
+
+export async function GET() {
+  try {
+    const metadataDirectory = path.join(
+      process.cwd(),
+      "private_evidence",
+      "metadata"
+    );
+
+    const filenames = await readdir(metadataDirectory);
+
+    const records = await Promise.all(
+      filenames
+        .filter((name) => name.endsWith(".json"))
+        .map(async (name) => {
+          try {
+            const content = await readFile(
+              path.join(metadataDirectory, name),
+              "utf8"
+            );
+            return JSON.parse(content);
+          } catch {
+            return null;
+          }
+        })
+    );
+
+    const evidence = records
+      .filter((record) => record !== null)
+      .sort(
+        (a, b) =>
+          new Date(b.uploadedAt).getTime() -
+          new Date(a.uploadedAt).getTime()
+      );
+
+    return NextResponse.json({
+      totalEvidence: evidence.length,
+      evidence,
+    });
+  } catch {
+    return NextResponse.json({
+      totalEvidence: 0,
+      evidence: [],
+    });
+  }
+}
+
