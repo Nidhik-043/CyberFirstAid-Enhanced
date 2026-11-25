@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { mkdir, readdir, readFile, writeFile } from "fs/promises";
 import path from "path";
@@ -21,6 +21,11 @@ export async function POST(request: Request) {
       "harassment",
       "lost_device",
       "other",
+      "social_media_hacking",
+      "email_compromise",
+      "online_harassment",
+      "lost_stolen_devices",
+      "unknown",
     ];
 
     if (!allowedTypes.includes(body.incidentType)) {

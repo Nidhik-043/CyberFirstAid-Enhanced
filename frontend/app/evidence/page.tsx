@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -342,7 +342,7 @@ useEffect(() => {
         </div>
 
         <div className="mb-8 rounded-xl border border-amber-800 bg-amber-950/30 p-5 text-sm text-amber-200">
-          Selected evidence files are uploaded to the application's server
+          Selected evidence files are uploaded to the application&apos;s server
           and stored in its private evidence directory. Do not upload
           sensitive files unless you are authorized to do so. This prototype
           does not yet implement user authentication or access control.
