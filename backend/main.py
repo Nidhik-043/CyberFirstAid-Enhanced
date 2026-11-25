@@ -23,9 +23,14 @@ from ai_module.src.incident_questions import get_incident_questions
 from emergency.routes import router as emergency_router
 from emergency import models as emergency_models
 
+# Import phishing detection API
+from phishing_api import router as phishing_router
+
 # Create the FastAPI application
 app = FastAPI(title="CyberFirstAid Backend")
 
+# Register phishing detection endpoints
+app.include_router(phishing_router)
 
 # Allow the frontend to communicate with the backend
 app.add_middleware(

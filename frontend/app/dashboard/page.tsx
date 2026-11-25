@@ -38,6 +38,12 @@ const demoIncidents: Incident[] = [
 
 const quickActions = [
   {
+    title: "Phishing & Link Detection",
+    description: "Analyze suspicious URLs using our four-layer hybrid security engine.",
+    icon: "\uD83D\uDEE1\uFE0F",
+    href: "/phishing",
+  },
+  {
     title: "Report Incident",
     description: "Submit details of a cyber incident.",
     icon: "📋",

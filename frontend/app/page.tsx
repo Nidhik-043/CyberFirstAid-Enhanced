@@ -3,6 +3,14 @@ import Link from "next/link";
 
 const features = [
   {
+    title: "Phishing & Link Detection",
+    description:
+      "Analyze suspicious URLs using security rules, OpenPhish threat intelligence, machine learning and domain reputation.",
+    href: "/phishing",
+    icon: "\uD83D\uDEE1\uFE0F",
+    status: "Available",
+  },
+  {
     title: "Incident Reporting",
     description:
       "Describe a cyber incident and receive structured guidance on what to do next.",
@@ -93,6 +101,12 @@ export default function Home() {
 
         <div className="flex flex-wrap items-center gap-4">
           <Link
+            href="/phishing"
+            className="text-sm font-semibold text-cyan-400 hover:text-cyan-300"
+          >
+            Phishing Scanner
+          </Link>
+          <Link
             href="/dashboard"
             className="text-sm font-semibold text-slate-300 hover:text-cyan-400"
           >
@@ -153,6 +167,12 @@ export default function Home() {
 
         {/* Main Action Buttons */}
         <div className="flex flex-wrap justify-center gap-4">
+          <Link
+            href="/phishing"
+            className="rounded-xl border border-cyan-500 bg-cyan-950/40 px-8 py-4 font-bold text-cyan-400 transition hover:bg-cyan-900"
+          >
+            Scan Suspicious Link
+          </Link>
           <Link
             href="/report"
             className="rounded-xl bg-cyan-500 px-8 py-4 font-bold text-slate-950 transition hover:bg-cyan-400"

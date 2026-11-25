@@ -32,3 +32,20 @@ htmlcov/
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# Local phishing threat intelligence data
+ai_module/data/
+
+ai_module/advanced_venv/
+
+# Private incident and evidence data
+frontend/private_incidents/
+frontend/private_evidence/
+
+# Local database
+backend/cyberfirstaid.db
+
+# Experimental ML models
+ai_module/models/advanced_url_model.joblib
+ai_module/models/advanced_url_model_v3.joblib
+ai_module/models/phishing_model_backup.joblib
