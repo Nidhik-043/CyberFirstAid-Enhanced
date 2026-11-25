@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
 type EvidenceFile = {
@@ -10,6 +10,13 @@ type EvidenceFile = {
   serverId?: string;
   hash?: string;
   currentHash?: string;
+};
+
+type IncidentOption = {
+  id: string;
+  incidentType: string;
+  incidentDate: string;
+  status: string;
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -24,6 +31,65 @@ function formatFileSize(bytes: number) {
 
 export default function EvidencePage() {
   const [files, setFiles] = useState<EvidenceFile[]>([]);
+  const [history, setHistory] = useState<any[]>([]);
+const [historyLoading, setHistoryLoading] = useState(true);
+  const [auditEvents, setAuditEvents] = useState<any[]>([]);
+  const [auditLoading, setAuditLoading] = useState(true);
+  const [incidents, setIncidents] = useState<IncidentOption[]>([]);
+  const [selectedIncidentId, setSelectedIncidentId] = useState("");
+
+useEffect(() => {
+  async function loadEvidenceHistory() {
+    try {
+      const response = await fetch("/api/evidence");
+
+      if (!response.ok) {
+        throw new Error("Unable to load evidence history");
+      }
+
+      const result = await response.json();
+      setHistory(result.evidence || []);
+    } catch (error) {
+      console.error("Evidence history error:", error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  loadEvidenceHistory();
+}, []);
+useEffect(() => {
+  async function loadAuditTrail() {
+    try {
+      const response = await fetch("/api/evidence/audit");
+      if (!response.ok) throw new Error("Unable to load audit trail");
+      const result = await response.json();
+      setAuditEvents(result.events || []);
+    } catch (error) {
+      console.error("Audit trail error:", error);
+    } finally {
+      setAuditLoading(false);
+    }
+  }
+
+  loadAuditTrail();
+}, []);
+  useEffect(() => {
+    async function loadIncidents() {
+      try {
+        const response = await fetch("/api/incidents");
+        if (!response.ok) throw new Error("Unable to load incidents");
+        const result = await response.json();
+        setIncidents(result.incidents || []);
+      } catch (loadError) {
+        console.error("Incident loading error:", loadError);
+        setError("Unable to load incident list. Please refresh the page.");
+      }
+    }
+
+    loadIncidents();
+  }, []);
+
   const [error, setError] = useState("");
   const [processing, setProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,6 +129,10 @@ export default function EvidencePage() {
 
   async function uploadEvidence() {
     if (processing) return;
+    if (!selectedIncidentId) {
+      setError("Please select an incident before uploading evidence.");
+      return;
+    }
 
     const pendingFiles = files.filter((item) => !item.serverId);
     if (pendingFiles.length === 0) return;
@@ -77,6 +147,7 @@ export default function EvidencePage() {
         try {
           const formData = new FormData();
           formData.append("file", item.file);
+          formData.append("incidentId", selectedIncidentId);
 
           const response = await fetch("/api/evidence", {
             method: "POST",
@@ -199,8 +270,52 @@ export default function EvidencePage() {
           </p>
         </div>
 
+        <div className="mb-8 rounded-xl border border-cyan-800 bg-slate-900 p-6">
+          <label htmlFor="incident-select" className="mb-3 block font-semibold text-cyan-300">
+            Select Related Incident
+          </label>
+          <select
+            id="incident-select"
+            value={selectedIncidentId}
+            onChange={(event) => setSelectedIncidentId(event.target.value)}
+            className="w-full rounded-lg border border-slate-700 bg-slate-950 p-3 text-white"
+          >
+            <option value="">Choose an incident</option>
+            {incidents.map((incident) => (
+              <option key={incident.id} value={incident.id}>
+                {incident.id} — {incident.incidentType.replaceAll("_", " ")} ({incident.status})
+              </option>
+            ))}
+          </select>
+          <p className="mt-2 text-sm text-slate-400">
+            Evidence will be linked to the selected incident.
+          </p>
+          {incidents.length === 0 && (
+            <p className="mt-2 text-sm text-amber-300">
+              No saved incidents found. Submit an incident report first.
+            </p>
+          )}
+        </div>
+
         <div className="mb-8 rounded-2xl border-2 border-dashed border-cyan-800 bg-slate-900 p-10 text-center">
-          <div className="mb-4 text-5xl">📁</div>
+          <div className="mb-4 flex justify-center text-cyan-400">
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="56"
+    height="56"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+    <polyline points="17 8 12 3 7 8" />
+    <line x1="12" y1="3" x2="12" y2="16" />
+  </svg>
+</div>
           <h2 className="mb-3 text-2xl font-bold">Select Evidence Files</h2>
           <p className="mb-6 text-slate-400">
             Supported: PNG, JPG, JPEG, PDF, TXT
@@ -227,7 +342,7 @@ export default function EvidencePage() {
         </div>
 
         <div className="mb-8 rounded-xl border border-amber-800 bg-amber-950/30 p-5 text-sm text-amber-200">
-          Selected evidence files are uploaded to the application's server
+          Selected evidence files are uploaded to the application&apos;s server
           and stored in its private evidence directory. Do not upload
           sensitive files unless you are authorized to do so. This prototype
           does not yet implement user authentication or access control.
@@ -348,7 +463,68 @@ export default function EvidencePage() {
           </button>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+        <div className="mt-8 rounded-2xl border border-cyan-800 bg-slate-900 p-6">
+  <h2 className="mb-5 text-2xl font-bold text-cyan-400">
+    Evidence History
+  </h2>
+
+  {historyLoading ? (
+    <p className="text-slate-400">Loading evidence history...</p>
+  ) : history.length === 0 ? (
+    <p className="text-slate-400">No previous evidence records found.</p>
+  ) : (
+    <div className="space-y-4">
+      {history.map((item) => (
+        <div key={item.id} className="rounded-xl border border-slate-700 bg-slate-800 p-4">
+          <h3 className="font-bold text-white">{item.originalName}</h3>
+          <p className="mt-2 text-sm text-slate-400">Evidence ID: {item.id}</p>
+          <p className="text-sm text-slate-400">Size: {(item.fileSize / 1024).toFixed(2)} KB</p>
+          <p className="text-sm text-slate-400">Uploaded: {new Date(item.uploadedAt).toLocaleString()}</p>
+          <p className="mt-3 text-xs font-semibold text-cyan-400">SHA-256 Fingerprint</p>
+          <p className="break-all font-mono text-xs text-slate-300">{item.sha256}</p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+<div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+  <div className="mb-5 flex items-center justify-between">
+    <div>
+      <h2 className="text-xl font-bold text-white">Audit Trail</h2>
+      <p className="mt-1 text-sm text-slate-400">Evidence activity and verification history</p>
+    </div>
+    <span className="rounded-full bg-cyan-500/10 px-3 py-1 text-sm text-cyan-300">
+      {auditEvents.length} Events
+    </span>
+  </div>
+
+  {auditLoading ? (
+    <p className="text-sm text-slate-400">Loading audit history...</p>
+  ) : auditEvents.length === 0 ? (
+    <p className="text-sm text-slate-400">No audit events recorded yet.</p>
+  ) : (
+    <div className="space-y-3">
+      {auditEvents.map((event, index) => (
+        <div key={`${event.evidenceId}-${event.event}-${event.timestamp}-${index}`}
+          className="rounded-xl border border-slate-800 bg-slate-950 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-semibold text-white">{event.event}</span>
+            <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs text-emerald-300">
+              {event.result}
+            </span>
+          </div>
+          <p className="mt-2 break-all text-xs text-slate-400">
+            Evidence ID: {event.evidenceId}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">
+            {new Date(event.timestamp).toLocaleString()}
+          </p>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+<div className="mt-8 rounded-2xl border border-slate-800 bg-slate-900 p-6">
           <h2 className="mb-3 text-xl font-bold">What Is SHA-256?</h2>
           <p className="text-slate-300">
             SHA-256 generates a digital fingerprint of a file. If the file
@@ -378,3 +554,7 @@ export default function EvidencePage() {
     </main>
   );
 }
+
+
+
+
