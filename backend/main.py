@@ -18,8 +18,14 @@ import models
 # Import Member 3's AI function
 from ai_module.src import assess_incident
 
+# Import phishing detection API
+from phishing_api import router as phishing_router
+
 # Create the FastAPI application
 app = FastAPI(title="CyberFirstAid Backend")
+
+# Register phishing detection endpoints
+app.include_router(phishing_router)
 
 # Allow the frontend to communicate with the backend
 app.add_middleware(

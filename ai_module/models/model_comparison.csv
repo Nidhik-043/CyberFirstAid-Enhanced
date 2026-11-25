@@ -1,0 +1,16 @@
+URL,Expected,V2 Prediction,V2 Risk %,V3 Prediction,V3 Risk %
+google.com,benign,phishing,100.0,phishing,99.3
+https://www.google.com,benign,phishing,74.19,phishing,92.25
+https://www.amazon.com,benign,phishing,74.26,phishing,94.19
+https://incometax.gov.in,benign,phishing,81.12,phishing,98.14
+https://npci.org.in,benign,phishing,75.0,phishing,99.34
+https://whatsapp.com,benign,phishing,76.15,phishing,98.69
+https://www.sbi.co.in,benign,phishing,73.0,phishing,85.69
+https://www.apple.com,benign,phishing,74.27,phishing,94.07
+https://github.com,benign,phishing,73.47,phishing,97.86
+https://example.com,benign,phishing,74.47,phishing,98.71
+https://secure-sbi-login.example.com,suspicious,phishing,85.5,phishing,99.24
+https://paypal-verify-account.example.com,suspicious,phishing,88.99,phishing,98.82
+https://google.com.example.com,suspicious,phishing,75.87,phishing,92.81
+https://amaz0n-login.example.com,suspicious,phishing,81.32,phishing,98.29
+https://192.0.2.10/bank/login,suspicious,defacement,95.13,phishing,57.19

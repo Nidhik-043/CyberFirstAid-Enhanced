@@ -32,3 +32,8 @@ htmlcov/
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# Local phishing threat intelligence data
+ai_module/data/
+
+ai_module/advanced_venv/
