@@ -15,8 +15,12 @@ from database import Base, engine, SessionLocal
 from models import Incident
 import models
 
-# Import Member 3's AI function
+# Import existing AI function
 from ai_module.src import assess_incident
+
+# Member 2 - Personalized Cyber Emergency Assistant
+from emergency.routes import router as emergency_router
+from emergency import models as emergency_models
 
 # Create the FastAPI application
 app = FastAPI(title="CyberFirstAid Backend")
@@ -33,13 +37,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Create existing and new database tables
 Base.metadata.create_all(bind=engine)
+
+# Register Member 2's emergency APIs
+app.include_router(emergency_router)
 
 
 # Define the information we expect from the user
 
 class IncidentRequest(BaseModel):
-    description: str = Field(..., min_length=5, max_length=5000)
+    description: str = Field(
+        ...,
+        min_length=5,
+        max_length=5000
+    )
 
     @field_validator("description")
     @classmethod
@@ -60,7 +72,11 @@ class IncidentRequest(BaseModel):
 
 
 class IncidentUpdate(BaseModel):
-    description: str = Field(..., min_length=5, max_length=5000)
+    description: str = Field(
+        ...,
+        min_length=5,
+        max_length=5000
+    )
 
     @field_validator("description")
     @classmethod
@@ -80,16 +96,21 @@ class IncidentUpdate(BaseModel):
         return value
 
 
-
-
-
+# --------------------------------------------------
 # Home API
+# --------------------------------------------------
+
 @app.get("/")
 def home():
-    return {"message": "Welcome to CyberFirstAid Backend!"}
+    return {
+        "message": "Welcome to CyberFirstAid Backend!"
+    }
 
 
+# --------------------------------------------------
 # Analyse an incident and save it
+# --------------------------------------------------
+
 @app.post("/api/assessment")
 def analyse_incident(request: IncidentRequest):
 
@@ -119,6 +140,7 @@ def analyse_incident(request: IncidentRequest):
 
     except Exception:
         db.rollback()
+
         raise HTTPException(
             status_code=500,
             detail="Incident assessment could not be completed."
@@ -127,7 +149,11 @@ def analyse_incident(request: IncidentRequest):
     finally:
         db.close()
 
+
+# --------------------------------------------------
 # Update an existing incident
+# --------------------------------------------------
+
 @app.put("/api/incidents/{incident_id}")
 def update_incident(
     incident_id: int,
@@ -162,10 +188,10 @@ def update_incident(
         db.close()
 
 
+# --------------------------------------------------
 # Get all previously saved incidents
+# --------------------------------------------------
 
-
-# Get all previously saved incidents
 @app.get("/api/incidents")
 def get_incidents():
 
@@ -196,7 +222,10 @@ def get_incidents():
         db.close()
 
 
+# --------------------------------------------------
 # Get one incident using its ID
+# --------------------------------------------------
+
 @app.get("/api/incidents/{incident_id}")
 def get_incident(incident_id: int):
 
@@ -230,13 +259,18 @@ def get_incident(incident_id: int):
         db.close()
 
 
-# Delete an incident using its ID
+# --------------------------------------------------
+# Delete an incident and associated recovery records
+# Member 2 - Recovery record cleanup
+# --------------------------------------------------
+
 @app.delete("/api/incidents/{incident_id}")
 def delete_incident(incident_id: int):
 
     db = SessionLocal()
 
     try:
+        # Find the incident
         incident = db.query(Incident).filter(
             Incident.id == incident_id
         ).first()
@@ -247,7 +281,26 @@ def delete_incident(incident_id: int):
                 detail="Incident not found."
             )
 
+        # Find the associated recovery plan
+        recovery_plan = db.query(
+            emergency_models.RecoveryPlan
+        ).filter(
+            emergency_models.RecoveryPlan.incident_id
+            == incident_id
+        ).first()
+
+        # Delete the recovery plan and its associated tasks
+        if recovery_plan is not None:
+
+            db.delete(recovery_plan)
+
+            # Execute pending deletions without committing
+            db.flush()
+
+        # Delete the original incident
         db.delete(incident)
+
+        # Commit all deletions together
         db.commit()
 
         return {
@@ -255,13 +308,32 @@ def delete_incident(incident_id: int):
             "incident_id": incident_id
         }
 
+    except HTTPException:
+
+        db.rollback()
+        raise
+
+    except Exception:
+
+        # Undo all pending changes if deletion fails
+        db.rollback()
+
+        raise HTTPException(
+            status_code=500,
+            detail="Incident and recovery records could not be deleted."
+        )
+
     finally:
         db.close()
-        
 
+
+# --------------------------------------------------
 # Mark an incident as resolved
+# --------------------------------------------------
+
 @app.put("/api/incidents/{incident_id}/resolve")
 def resolve_incident(incident_id: int):
+
     db = SessionLocal()
 
     try:
@@ -276,6 +348,7 @@ def resolve_incident(incident_id: int):
             )
 
         incident.status = "resolved"
+
         db.commit()
         db.refresh(incident)
 
@@ -287,4 +360,3 @@ def resolve_incident(incident_id: int):
 
     finally:
         db.close()
-
