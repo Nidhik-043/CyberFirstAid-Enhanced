@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
 type Assessment = {
@@ -12,26 +12,11 @@ type Assessment = {
   immediate_actions: string[];
   follow_up_actions: string[];
   needs_review: boolean;
-};
-
-// Demonstration data based on the AI module's output format.
-// Replace with the backend API response during integration.
-const demoAssessment: Assessment = {
-  incident_category: "financial_fraud",
-  matched_keywords: ["otp", "bank"],
-  classification_needs_review: false,
-  risk_level: "critical",
-  immediate_actions: [
-    "Contact your bank or payment provider immediately through its official app or verified phone number.",
-    "If you are in India, report financial cyber fraud through the 1930 helpline.",
-    "Secure affected banking accounts using official support channels.",
-  ],
-  follow_up_actions: [
-    "Save transaction IDs, messages, receipts and relevant screenshots.",
-    "Report the incident at cybercrime.gov.in.",
-    "Monitor affected accounts for suspicious activity.",
-  ],
-  needs_review: false,
+  incident_id?: number;
+  risk_score?: number;
+  risk_reasons?: string[];
+  classification_source?: string;
+  ml_suggestion?: string | null;
 };
 
 const categoryNames: Record<string, string> = {
@@ -46,7 +31,42 @@ const categoryNames: Record<string, string> = {
 };
 
 export default function AssessmentPage() {
-  const [assessment] = useState<Assessment>(demoAssessment);
+  const [assessment, setAssessment] = useState<Assessment | null>(null);
+
+  useEffect(() => {
+    const stored = sessionStorage.getItem("cyberfirstaid_assessment");
+
+    if (stored) {
+      try {
+        // Intentional one-time hydration from sessionStorage.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setAssessment(JSON.parse(stored) as Assessment);
+      } catch {
+        setAssessment(null);
+      }
+    }
+  }, []);
+
+  if (!assessment) {
+    return (
+      <main className="min-h-screen bg-slate-950 text-white">
+        <nav className="border-b border-slate-800 px-6 py-5 md:px-16">
+          <Link href="/" className="text-2xl font-bold text-cyan-400">
+            CyberFirstAid
+          </Link>
+        </nav>
+        <section className="mx-auto max-w-3xl px-6 py-20 text-center">
+          <h1 className="mb-4 text-3xl font-bold">No Assessment Available</h1>
+          <p className="mb-8 text-slate-400">
+            Please submit an incident report to view your Core Intelligence assessment.
+          </p>
+          <Link href="/report" className="rounded-xl bg-cyan-500 px-6 py-3 font-bold text-slate-950">
+            Report an Incident
+          </Link>
+        </section>
+      </main>
+    );
+  }
 
   const riskColors: Record<string, string> = {
     critical: "border-red-600 bg-red-950 text-red-300",
@@ -83,13 +103,12 @@ export default function AssessmentPage() {
           </p>
 
           <p className="mt-3 text-sm text-amber-300">
-            Demonstration assessment — not generated from your
-            submitted incident yet.
+            Generated from your submitted incident by Core Intelligence.
           </p>
         </div>
 
         {/* Assessment Summary */}
-        <div className="mb-8 grid gap-6 md:grid-cols-2">
+        <div className="mb-8 grid gap-6 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-800 bg-slate-900 p-7">
             <h2 className="mb-3 text-sm font-semibold text-slate-400">
               Detected Incident Category
@@ -112,8 +131,28 @@ export default function AssessmentPage() {
               {assessment.risk_level}
             </span>
           </div>
-        </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900 p-7">
+            <h2 className="mb-3 text-sm font-semibold text-slate-400">
+              Risk Score
+            </h2>
+            <p className="text-3xl font-bold text-cyan-400">
+              {assessment.risk_score ?? "N/A"}
+              {assessment.risk_score !== undefined ? "/100" : ""}
+            </p>
+          </div>        </div>
 
+        {assessment.risk_reasons && assessment.risk_reasons.length > 0 && (
+          <div className="mb-8 rounded-2xl border border-slate-800 bg-slate-900 p-7">
+            <h2 className="mb-4 text-xl font-bold text-cyan-400">
+              Risk Assessment Reasons
+            </h2>
+            <ul className="list-disc space-y-2 pl-6 text-slate-300">
+              {assessment.risk_reasons.map((reason, index) => (
+                <li key={index}>{reason}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         {/* Immediate Actions */}
         <div className="mb-8 rounded-2xl border border-red-900 bg-slate-900 p-7">
           <h2 className="mb-5 text-2xl font-bold text-red-400">
@@ -216,3 +255,4 @@ export default function AssessmentPage() {
     </main>
   );
 }
+

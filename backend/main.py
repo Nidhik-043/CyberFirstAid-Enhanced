@@ -1,4 +1,3 @@
-
 import sys
 from pathlib import Path
 
@@ -6,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 
-# Find the main CyberShieldAid project folder
+# Find the main CyberFirstAid project folder
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -15,8 +14,10 @@ from database import Base, engine, SessionLocal
 from models import Incident
 import models
 
-# Import existing AI function
+# Import Core Intelligence functions
 from ai_module.src import assess_incident
+from ai_module.src.incident_questions import get_incident_questions
+
 
 # Member 2 - Personalized Cyber Emergency Assistant
 from emergency.routes import router as emergency_router
@@ -24,6 +25,7 @@ from emergency import models as emergency_models
 
 # Create the FastAPI application
 app = FastAPI(title="CyberFirstAid Backend")
+
 
 # Allow the frontend to communicate with the backend
 app.add_middleware(
@@ -44,14 +46,10 @@ Base.metadata.create_all(bind=engine)
 app.include_router(emergency_router)
 
 
-# Define the information we expect from the user
-
+# Information expected from the user
 class IncidentRequest(BaseModel):
-    description: str = Field(
-        ...,
-        min_length=5,
-        max_length=5000
-    )
+    description: str = Field(..., min_length=5, max_length=5000)
+    answers: dict[str, str] | None = None
 
     @field_validator("description")
     @classmethod
@@ -107,6 +105,24 @@ def home():
     }
 
 
+# Get incident-specific follow-up questions
+@app.get("/api/assessment/questions/{category}")
+def get_assessment_questions(category: str):
+
+    questions = get_incident_questions(category)
+
+    if not questions:
+        raise HTTPException(
+            status_code=404,
+            detail="No questions found for this incident category."
+        )
+
+    return {
+        "category": category,
+        "questions": questions
+    }
+
+
 # --------------------------------------------------
 # Analyse an incident and save it
 # --------------------------------------------------
@@ -117,8 +133,13 @@ def analyse_incident(request: IncidentRequest):
     db = SessionLocal()
 
     try:
-        result = assess_incident(request.description)
+        # Classify the incident and calculate risk using answers
+        result = assess_incident(
+            request.description,
+            request.answers
+        )
 
+        # Save the incident in the database
         new_incident = Incident(
             description=request.description,
             incident_category=result["incident_category"],

@@ -1,5 +1,4 @@
-
-import unittest
+﻿import unittest
 
 from ai_module.src.assessment import assess_incident
 
@@ -43,6 +42,39 @@ class TestCyberFirstAidAssessment(unittest.TestCase):
         self.assertEqual(result["incident_category"], "unknown")
         self.assertTrue(result["needs_review"])
 
+    def test_questionnaire_yes_increases_risk(self):
+        result = assess_incident(
+            "I noticed an unknown transaction in my bank account",
+            {"money_lost": "Yes"}
+        )
+        self.assertEqual(result["risk_score"], 60)
+        self.assertEqual(result["risk_level"], "high")
+
+    def test_questionnaire_no_does_not_add_risk(self):
+        result = assess_incident(
+            "I noticed an unknown transaction in my bank account",
+            {"money_lost": "No"}
+        )
+        self.assertEqual(result["risk_score"], 25)
+        self.assertFalse(result["needs_review"])
+
+    def test_not_sure_requires_review(self):
+        result = assess_incident(
+            "I noticed an unknown transaction in my bank account",
+            {"money_lost": "Not sure"}
+        )
+        self.assertEqual(result["risk_score"], 25)
+        self.assertTrue(result["needs_review"])
+
+    def test_duplicate_money_loss_is_not_counted_twice(self):
+        result = assess_incident(
+            "Someone stole money from my bank account",
+            {"money_lost": "Yes"}
+        )
+        self.assertEqual(result["risk_score"], 70)
+
 
 if __name__ == "__main__":
     unittest.main()
+
+
